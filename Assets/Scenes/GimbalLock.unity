@@ -153,12 +153,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 578cf3ed7f65b48529e2b39940f5dabb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  transformation3D: 0
+  order: 0
+  rotationAxis: 0
   angleX: 0
   angleY: 0
   angleZ: 0
-  run: 0
-  loop: 0
+  angleIncrement: 0
+  forceGimbalLock: 0
 --- !u!4 &382132940
 Transform:
   m_ObjectHideFlags: 0
