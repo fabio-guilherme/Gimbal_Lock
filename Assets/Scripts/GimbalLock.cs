@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
@@ -19,6 +20,14 @@ public enum Order
     ZYX
 }
 
+public enum RotationAxis
+{
+    None,
+    X,
+    Y,
+    Z
+}
+
 public class GimbalLock : MonoBehaviour
 {
     private Mesh mesh;
@@ -28,18 +37,23 @@ public class GimbalLock : MonoBehaviour
 
     private Example example = Example.GimbalLockDemo;
     public Order order;
+    public RotationAxis rotationAxis;
 
     // Total angles for X and Y axis rotation in degrees
     public float angleX = 0f;
     public float angleY = 0f;
     public float angleZ = 0f;
 
-    // Increment in the angle rotation
-    public float incrementX;
-    public float incrementY;
-    public float incrementZ;
+    // Increment in the angle rotation for X, Y and Z
+    private float incrementX;
+    private float incrementY;
+    private float incrementZ;
 
-    public bool run = true;
+    // Increment to work with only 1 angle at a time
+    public float angleIncrement;
+
+    private bool run = true;
+    public bool forceGimbalLock = false;
     
     // Start is called before the first frame update
     void Start()
@@ -113,6 +127,58 @@ public class GimbalLock : MonoBehaviour
             {
                 case Example.GimbalLockDemo:
                     {
+                        incrementX = 0;
+                        incrementY = 0;
+                        incrementZ = 0;
+
+                        // Force gimbal lock if this option is selected
+                        if (forceGimbalLock)
+                        {
+                            if (order == Order.YXZ || order == Order.ZXY)
+                            {
+                                angleX = 90;
+                                if (rotationAxis == RotationAxis.X)
+                                {
+                                    angleIncrement = 0;
+                                }
+                            }
+                            if (order == Order.XYZ || order == Order.ZYX)
+                            {
+                                angleY = 90;
+                                if (rotationAxis == RotationAxis.Y)
+                                {
+                                    angleIncrement = 0;
+                                }
+                            }
+                            if (order == Order.XZY || order == Order.YZX)
+                            {
+                                angleZ = 90;
+                                if (rotationAxis == RotationAxis.Z)
+                                {
+                                    angleIncrement = 0;
+                                }
+                            }
+                        }
+
+                        switch (rotationAxis)
+                        {
+                            case RotationAxis.X:
+                                {
+                                    incrementX = angleIncrement;
+                                    break;
+                                }
+                            case RotationAxis.Y:
+                                {
+                                    incrementY = angleIncrement;
+                                    break;
+                                }
+                            case RotationAxis.Z:
+                                {
+                                    incrementZ = angleIncrement;
+                                    break;
+                                }
+                            default: break;
+                        }
                         // Increase angles continuously
                         angleX += incrementX;
                         angleY += incrementY;
