@@ -6,7 +6,6 @@ using UnityEngine;
 public enum Example
 {
     None,
-    RotationXYZ,
     GimbalLockDemo
 }
 
@@ -27,7 +26,7 @@ public class GimbalLock : MonoBehaviour
     private Vector3[] normals;
     private MeshRenderer meshRenderer;
 
-    public Example example;
+    private Example example = Example.GimbalLockDemo;
     public Order order;
 
     // Total angles for X and Y axis rotation in degrees
@@ -35,14 +34,13 @@ public class GimbalLock : MonoBehaviour
     public float angleY = 0f;
     public float angleZ = 0f;
 
-    // Current X and Y axis rotation in radians
-    public float rotationX;
-    public float rotationY;
-    public float rotationZ;
+    // Increment in the angle rotation
+    public float incrementX;
+    public float incrementY;
+    public float incrementZ;
 
-    public bool run = false;
-    private bool locked = false;
-
+    public bool run = true;
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -113,31 +111,24 @@ public class GimbalLock : MonoBehaviour
         {
             switch (example)
             {
-                case Example.RotationXYZ:
-                    {
-                        Reset();
-                        RotateXYZ3D(angleX * Mathf.Deg2Rad, angleY * Mathf.Deg2Rad, angleZ * Mathf.Deg2Rad);
-                        break;
-                    }
                 case Example.GimbalLockDemo:
                     {
                         // Increase angles continuously
-                        //rotationX = 20f * Time.deltaTime;
-                        //rotationY = 20f * Time.deltaTime;
-                        //rotationZ = 20f * Time.deltaTime;
-                        angleX += rotationX;
-                        angleY += rotationY;
-                        angleZ += rotationZ;
+                        angleX += incrementX;
+                        angleY += incrementY;
+                        angleZ += incrementZ;
 
-                        // Rotate around X and Y axes
-                        RotateXYZ3D(rotationX * Mathf.Deg2Rad, rotationY * Mathf.Deg2Rad, rotationZ * Mathf.Deg2Rad);
+                        // Rotate around X, Y and Z axes
+                        //RotateXYZ(rotationX * Mathf.Deg2Rad, rotationY * Mathf.Deg2Rad, rotationZ * Mathf.Deg2Rad);
+                        Reset();
+                        RotateXYZ(angleX * Mathf.Deg2Rad, angleY * Mathf.Deg2Rad, angleZ * Mathf.Deg2Rad);
                         break;
                     }
                 default: break;
             }
-            Debug.Log($"Current Rotation X: {rotationX} degrees");
-            Debug.Log($"Current Rotation Y: {rotationY} degrees");
-            Debug.Log($"Current Rotation Z: {rotationZ} degrees\n");
+            Debug.Log($"Current Rotation X: {incrementX} degrees");
+            Debug.Log($"Current Rotation Y: {incrementY} degrees");
+            Debug.Log($"Current Rotation Z: {incrementZ} degrees\n");
         }
     }
 
@@ -197,7 +188,7 @@ public class GimbalLock : MonoBehaviour
         mesh.normals = normals;
     }
 
-    void RotateXYZ3D(float x, float y, float z)
+    void RotateXYZ(float x, float y, float z)
     {
         // Keep angle between 0 and 360
         angleX = angleX % 360;
@@ -209,26 +200,7 @@ public class GimbalLock : MonoBehaviour
         Matrix4x4 rymat = RotYMat(y);
         Matrix4x4 rzmat = RotZMat(z);
 
-        /*  
-        // Modify angleY to force 90 degrees after a threshold
-        if (Mathf.Abs(angleY) >= 90f)
-        {
-            meshRenderer.material.color = Color.red; // Change color to red
-            if (!locked)
-            {
-                //angleX = 90f; // Set to 90 degrees
-                //angleY = 90f; // Set to 90 degrees
-                //angleZ = 90f; // Set to 90 degrees
-                //rotationY = 0f; // Stop Y rotation update
-            }
-            locked = true;
-        }
-        else
-        {
-            meshRenderer.material.color = Color.grey; // Reset color
-            //angleY += rotationX;
-        }
-         * */
+        float lockAngle;    // Angle to check the lock condition
 
         // Combine the rotations using multiplication (order matters, particularly for gimbal lock!)
         Matrix4x4 combinedRotation;
@@ -237,38 +209,55 @@ public class GimbalLock : MonoBehaviour
             case Order.XYZ:
                 {
                     combinedRotation = rxmat * rymat * rzmat;
+                    lockAngle = angleY;
                     break;
                 }
             case Order.XZY:
                 {
                     combinedRotation = rxmat * rzmat * rymat;
+                    lockAngle = angleZ;
                     break;
                 }
             case Order.YXZ:
                 {
                     combinedRotation = rymat * rxmat * rzmat;
+                    lockAngle = angleX;
                     break;
                 }
             case Order.YZX:
                 {
                     combinedRotation = rymat * rzmat * rxmat;
+                    lockAngle = angleZ;
                     break;
                 }
             case Order.ZXY:
                 {
                     combinedRotation = rzmat * rxmat * rymat;
+                    lockAngle = angleX;
                     break;
                 }
             case Order.ZYX:
                 {
                     combinedRotation = rzmat * rymat * rxmat;
+                    lockAngle = angleY;
                     break;
                 }
             default:
                 {
                     combinedRotation = rymat * rxmat * rzmat; // YXZ: Same behaviour as Unity Inspector
+                    lockAngle = angleX;
                     break;
                 }
+        }
+
+        // Make object red to show the gimbal lock
+        if (Mathf.Abs(lockAngle) >= 89f && Mathf.Abs(lockAngle) <= 91f)
+        {
+            meshRenderer.material.color = Color.red; // Change color to red
+        }
+        else
+        {
+            meshRenderer.material.color = Color.grey; // Reset color
         }
 
         // Apply the combined rotation to each vertex and normal
