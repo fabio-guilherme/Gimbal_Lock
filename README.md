@@ -1,2 +1,2 @@
-# Transformations
- Transformations
+# Gimbal Lock
+ Gimbal Lock Example
