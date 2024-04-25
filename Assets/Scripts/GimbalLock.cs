@@ -6,7 +6,7 @@ using UnityEngine;
 public enum Example
 {
     None,
-    RotationXYZ3D,
+    RotationXYZ,
     GimbalLockDemo
 }
 
@@ -27,7 +27,8 @@ public class GimbalLock : MonoBehaviour
     private Vector3[] normals;
     private MeshRenderer meshRenderer;
 
-    public Example transformation3D;
+    public Example example;
+    public Order order;
 
     // Total angles for X and Y axis rotation in degrees
     public float angleX = 0f;
@@ -110,9 +111,9 @@ public class GimbalLock : MonoBehaviour
     {
         if (run)
         {
-            switch (transformation3D)
+            switch (example)
             {
-                case Example.RotationXYZ3D:
+                case Example.RotationXYZ:
                     {
                         Reset();
                         RotateXYZ3D(angleX * Mathf.Deg2Rad, angleY * Mathf.Deg2Rad, angleZ * Mathf.Deg2Rad);
@@ -230,7 +231,45 @@ public class GimbalLock : MonoBehaviour
          * */
 
         // Combine the rotations using multiplication (order matters, particularly for gimbal lock!)
-        Matrix4x4 combinedRotation = rymat * rxmat * rzmat; // Rotate in X, Y, and Z
+        Matrix4x4 combinedRotation;
+        switch (order)
+        {
+            case Order.XYZ:
+                {
+                    combinedRotation = rxmat * rymat * rzmat;
+                    break;
+                }
+            case Order.XZY:
+                {
+                    combinedRotation = rxmat * rzmat * rymat;
+                    break;
+                }
+            case Order.YXZ:
+                {
+                    combinedRotation = rymat * rxmat * rzmat;
+                    break;
+                }
+            case Order.YZX:
+                {
+                    combinedRotation = rymat * rzmat * rxmat;
+                    break;
+                }
+            case Order.ZXY:
+                {
+                    combinedRotation = rzmat * rxmat * rymat;
+                    break;
+                }
+            case Order.ZYX:
+                {
+                    combinedRotation = rzmat * rymat * rxmat;
+                    break;
+                }
+            default:
+                {
+                    combinedRotation = rymat * rxmat * rzmat; // YXZ: Same behaviour as Unity Inspector
+                    break;
+                }
+        }
 
         // Apply the combined rotation to each vertex and normal
         for (int i = 0; i < vertices.Length; i++)
